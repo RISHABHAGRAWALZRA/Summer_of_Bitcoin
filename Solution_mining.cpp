@@ -7,19 +7,19 @@
 #include <set>
 using namespace std;
 
-class Transaction
+class Transaction // Created Transaction Class for storing the data
 {
 
 public:
-    string trxn_id;
+    string trxn_id; // transaction Id
     int fee;
     int weight;
     set<string> parents;
 };
 
-int BLOCK_MAX_WEIGHT_LIMIT = 4000000;
+int BLOCK_MAX_WEIGHT_LIMIT = 4000000; // Limit of a block (Given in problem)
 unordered_map<string, Transaction *> input_trxnList;
-unordered_map<string, int> mapping;
+unordered_map<string, int> mapping; 
 unordered_map<int, string> revmapping;
 unordered_map<int, set<int>> trxn_parents;
 unordered_map<int, pair<int, int>> trxn_info;
@@ -33,7 +33,7 @@ void addTransactionInfo(vector<string> &trxn_info)
     trxn->weight = stoi(trxn_info[2]);
 
     set<string> parents;
-    if (trxn_info.size() > 3)
+    if (trxn_info.size() > 3) // Finding parents for the trxn_id and add it into parents set
     {
 
         string parent;
@@ -54,7 +54,7 @@ void readInputData(string fileName)
     fstream myFile(fileName);
     if (!myFile.is_open())
     {
-        cout << "ERROR: File is not Open" << '\n';
+        cout << "ERROR: File is not Open" << '\n'; //If file is somehow can't open
     }
     else
     {
@@ -69,8 +69,6 @@ void readInputData(string fileName)
                 trxn_info.push_back(word);
                 word.clear();
             }
-
-            //cout<<trxn_info[0]<<" "<<trxn_info[1]<<"\n";
             if (trxn_info[0] != "tx_id")
             {
                 addTransactionInfo(trxn_info);
@@ -81,7 +79,7 @@ void readInputData(string fileName)
     myFile.close();
 }
 
-void processData(string trxn_id, int &i)
+void processData(string trxn_id, int &i) // To process the input and convert it into desired form which is sorting according to parents and map it with an integer value
 {
     for (auto parent : input_trxnList[trxn_id]->parents)
     {
@@ -102,22 +100,19 @@ void processData(string trxn_id, int &i)
     i++;
 }
 
-pair<int, unordered_set<int>> findListOfTrxn(int start, int end, int currentWeight, unordered_set<int> &selectedListOfTrx)
-{
-    if (start > end || currentWeight == 0)
+pair<int, unordered_set<int>> findListOfTrxn(int start, int end, int currentWeight, unordered_set<int> &selectedListOfTrx) // finding solution with recurrsive approach
+{   
+    if ((start > end) || (currentWeight == 0))
     {
-        cout<<"1\n";
-        return make_pair(0, selectedListOfTrx);
+        unordered_set<int> ans = selectedListOfTrx;
+        return make_pair(0, ans);
     }
-
-    if (currentWeight < trxn_info[start].second)
+    else if (currentWeight < trxn_info[start].second)
     {
-        //cout<<currentWeight<<" "<<trxn_info[start].second<<" 2\n";
         return findListOfTrxn(start + 1, end, currentWeight, selectedListOfTrx);
     }
-
     else
-    {
+    {   
         int flag = 1;
         for (auto ele : trxn_parents[start])
         {
@@ -128,17 +123,19 @@ pair<int, unordered_set<int>> findListOfTrxn(int start, int end, int currentWeig
             }
         }
 
-        
-        int inFee=0;
+        int inFee = 0;
         unordered_set<int> inList;
         if (flag)
-        {   
+        {
             selectedListOfTrx.insert(start);
-            pair<int, unordered_set<int>> in = findListOfTrxn(start + 1, end, currentWeight - trxn_info[start].second, selectedListOfTrx);
+            int nextWeight = currentWeight - trxn_info[start].second;
+            pair<int, unordered_set<int>> in = findListOfTrxn(start + 1, end, nextWeight , selectedListOfTrx);
             inFee = in.first + trxn_info[start].first;
             inList = in.second;
             selectedListOfTrx.erase(start);
         }
+
+        
 
         pair<int, unordered_set<int>> out = findListOfTrxn(start + 1, end, currentWeight, selectedListOfTrx);
         int outFee = out.first;
@@ -146,12 +143,13 @@ pair<int, unordered_set<int>> findListOfTrxn(int start, int end, int currentWeig
         pair<int, unordered_set<int>> ans;
         if (inFee > outFee)
         {
-            ans = make_pair(inFee,inList);
-        }else{
-            ans = make_pair(outFee,out.second);
+            ans = make_pair(inFee, inList);
+        }
+        else
+        {
+            ans = make_pair(outFee, out.second);
         }
 
-        cout<<"3\n";
         return ans;
     }
 }
@@ -168,13 +166,17 @@ int main()
         }
     }
 
-    cout<<"Started\n";
+    cout << "Started\n"; // Tag for ease
     unordered_set<int> temp;
-    pair<int, unordered_set<int>> ans = findListOfTrxn(0,5213, BLOCK_MAX_WEIGHT_LIMIT, temp);
-    cout << ans.first << "\n";
+    int totalTrxn = 5214; // Total nummber of transaction in mempool file(INPUT DATA)
+    pair<int, unordered_set<int>> ans = findListOfTrxn(0, totalTrxn-1, BLOCK_MAX_WEIGHT_LIMIT, temp);
+    cout<<"Ended\n";
+    //Trying to print the answer
+    /* cout << ans.first << "\n";
     for (auto ele : ans.second)
     {
         cout << ele << "\n";
-    }
+    } */
+
     return 0;
 }
